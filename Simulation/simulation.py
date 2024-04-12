@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from math import isclose
 
 import numpy as np
+from utils import timeit
 
 class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
@@ -28,7 +29,12 @@ class Simulation(ABC):
     
     @abstractmethod
     def update_vel(self) -> None:
-        """Uptade the velocities after """
+        """Update the velocities after collisions"""
+        raise NotImplementedError
+    
+    @abstractmethod
+    def update_drag(self) -> None:
+        """Update the drag after collisions"""
         raise NotImplementedError
 
     @abstractmethod
@@ -75,7 +81,6 @@ class Simulation(ABC):
                 if isclose(pos_i, pos_j):
                     self.chains[self.step, i, j] = 1
 
-
     def step_process(self) -> None:
         """Process one step of simulation simulation"""
         self.step += 1
@@ -85,8 +90,10 @@ class Simulation(ABC):
         self.update_position()
         self.get_chains()
         self.update_vel()
+        self.update_drag()
         self.tumble()
 
+    @timeit
     def process(self) -> None:
         self.sampler()
         self.get_chains()
@@ -99,25 +106,37 @@ class Simulation(ABC):
         pass #TODO implement
 
 
-class TestSimu(Simulation):
+class Simu1(Simulation):
+    """Not tumbling. Sampling velocity. No drag update."""
     def __init__(self) -> None:
-        super().__init__("", 3, 1)
+        super().__init__("", nb_bacteria=100, nb_collisions=100)
     
     def tumble(self) -> None:
         pass
+
     def sampler(self) -> None:
-        self.velocity[:, 0] = [1, -2, 3]
-        self.position[:, 0] = [0, 1, 2]
+        self.velocity[:, 0] = [(-1) ** i * i for i in range(self.bacteria_nb)]
+        self.position[:, 0] = range(self.bacteria_nb)
+        self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
+
+    def update_drag(self) -> None:
+        self.drag[:, self.step] = self.drag[:, self.step -1]
 
     def update_vel(self) -> None:
-        pass
+        chains = self.chains[self.step, :, :]
+        drag = self.drag[:, self.step - 1]
+        forces_in_chains = self.velocity[:, self.step - 1] * drag * chains
+        abs_vel = np.abs(forces_in_chains).sum(axis=1) / (drag * chains).sum(axis=1)
+        sign = np.sign(forces_in_chains.sum(axis=1))
+        self.velocity[:, self.step] = sign * abs_vel
 
 
 if __name__ == "__main__":
-    simu = TestSimu()
+    simu = Simu1()
     simu.sampler()
     simu.process()
 
     # print(simu.position)
     # print(simu.time_collision)
-    print(simu.chains)
+    print(simu.velocity[:,-1])
+    print(np.abs(simu.velocity[:, 0]).mean())
