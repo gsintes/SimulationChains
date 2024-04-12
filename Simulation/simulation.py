@@ -1,6 +1,7 @@
 """Run the simulation of chains in single lane swimming."""
 
 from abc import ABC, abstractmethod
+from math import isclose
 
 import numpy as np
 
@@ -22,6 +23,8 @@ class Simulation(ABC):
         self.relative_pos = np.zeros((self.bacteria_nb, self.bacteria_nb))
         self.time_collision = np.zeros((self.collisions_nb + 1))
         self.step = 0
+
+        self.chains = np.array([np.identity(self.bacteria_nb) for _ in range(self.collisions_nb +1)])
     
     @abstractmethod
     def update_vel(self) -> None:
@@ -64,14 +67,13 @@ class Simulation(ABC):
         self.position[:, self.step] = self.position[:, self.step - 1] +\
             self.velocity[:, self.step - 1] * self.time_collision[self.step]
 
-    def update_drag(self) -> None:
-        """Update the drag coefficients"""
-        pass #TODO implement
-
     def get_chains(self) -> None:
         """Determine if a bacteria is in a chain."""
-        positions = [self.position[:, self.step]]
-        pass #TODO implement
+        positions = self.position[:, self.step]
+        for i, pos_i in enumerate(positions):
+            for j, pos_j in enumerate(positions):
+                if isclose(pos_i, pos_j):
+                    self.chains[self.step, i, j] = 1
 
 
     def step_process(self) -> None:
@@ -83,19 +85,19 @@ class Simulation(ABC):
         self.update_position()
         self.get_chains()
         self.update_vel()
-        self.update_drag()
         self.tumble()
 
     def process(self) -> None:
         self.sampler()
+        self.get_chains()
         for _ in range(self.collisions_nb):
             self.step_process()
-
         self.save()
 
     def save(self) -> None:
         """Save the simulation data."""
         pass #TODO implement
+
 
 class TestSimu(Simulation):
     def __init__(self) -> None:
@@ -109,10 +111,13 @@ class TestSimu(Simulation):
 
     def update_vel(self) -> None:
         pass
+
+
 if __name__ == "__main__":
     simu = TestSimu()
     simu.sampler()
     simu.process()
-    print(simu.position)
-    print(simu.time_collision)
-    print(simu.velocity)
+
+    # print(simu.position)
+    # print(simu.time_collision)
+    print(simu.chains)
