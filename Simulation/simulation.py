@@ -104,11 +104,7 @@ class Simulation(ABC):
         self.get_chains()
         for _ in range(self.collisions_nb):
             self.step_process()
-        self.save()
 
-    def save(self) -> None:
-        """Save the simulation data."""
-        pass #TODO implement
 
 
 class Simu1(Simulation):
@@ -142,6 +138,5 @@ if __name__ == "__main__":
     simu.sampler()
     simu.process()
 
-    # print(simu.position)
     print(simu.velocity[:, -1])
     print(np.abs(simu.velocity[:, 0]).mean())
