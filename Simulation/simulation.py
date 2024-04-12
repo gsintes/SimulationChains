@@ -47,6 +47,10 @@ class Simulation(ABC):
         """Tumbling of the bacteria."""
         raise NotImplementedError
     
+    def update_force(self) -> None:
+        """Update the force."""
+        self.force[:, self.step] = self.velocity[:, self.step] / self.drag[:, self.step]
+
     def relative_velocities(self) -> None:
         """Calculate the relative velocities of the different bacteria."""
         velocities = np.array([self.velocity[:, self.step - 1]])
@@ -91,6 +95,7 @@ class Simulation(ABC):
         self.get_chains()
         self.update_vel()
         self.update_drag()
+        self.update_force()
         self.tumble()
 
     @timeit
@@ -109,15 +114,16 @@ class Simulation(ABC):
 class Simu1(Simulation):
     """Not tumbling. Sampling velocity. No drag update."""
     def __init__(self) -> None:
-        super().__init__("", nb_bacteria=100, nb_collisions=100)
+        super().__init__("", nb_bacteria=1000, nb_collisions=100)
     
     def tumble(self) -> None:
         pass
 
     def sampler(self) -> None:
         self.velocity[:, 0] = [(-1) ** i * i for i in range(self.bacteria_nb)]
-        self.position[:, 0] = range(self.bacteria_nb)
+        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
+        self.update_force()
 
     def update_drag(self) -> None:
         self.drag[:, self.step] = self.drag[:, self.step -1]
@@ -137,6 +143,5 @@ if __name__ == "__main__":
     simu.process()
 
     # print(simu.position)
-    # print(simu.time_collision)
-    print(simu.velocity[:,-1])
+    print(simu.velocity[:, -1])
     print(np.abs(simu.velocity[:, 0]).mean())
