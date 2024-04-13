@@ -1,6 +1,8 @@
 """Post-processing the simulation."""
 
 import pandas as pd
+import matplotlib.pyplot as plt
+
 import simulation as sim
 
 class PostProcessing:
@@ -47,7 +49,8 @@ class PostProcessing:
         })
 
 if __name__=="""__main__""":
-    simu = sim.Simu1()
+    simu = sim.SimuSampleDragForce()
     pp = PostProcessing(simu)
     pp.get_chains()
-    print(pp.chains)
+    pp.chains.plot(x="chain_length", y="vel", marker="o", linestyle="")
+    plt.show(block=True)

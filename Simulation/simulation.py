@@ -9,9 +9,8 @@ from utils import timeit
 class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
     def __init__(self,
-                 saving_file: str,
                  nb_bacteria: int=1000,
-                 nb_collisions: int=100) -> None:
+                 nb_collisions: int=1000) -> None:
         self.bacteria_nb= nb_bacteria
         self.collisions_nb = nb_collisions
 
@@ -106,20 +105,16 @@ class Simulation(ABC):
             self.step_process()
 
 
-
-class Simu1(Simulation):
-    """Not tumbling. Sampling velocity. No drag update."""
+class SimuNoDragUpdate(Simulation):
     def __init__(self) -> None:
-        super().__init__("", nb_bacteria=1000, nb_collisions=100)
+        super().__init__()
     
     def tumble(self) -> None:
         pass
 
+    @abstractmethod
     def sampler(self) -> None:
-        self.velocity[:, 0] = [(-1) ** i * i for i in range(self.bacteria_nb)]
-        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
-        self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
-        self.update_force()
+        raise NotImplementedError
 
     def update_drag(self) -> None:
         self.drag[:, self.step] = self.drag[:, self.step -1]
@@ -133,8 +128,31 @@ class Simu1(Simulation):
         self.velocity[:, self.step] = sign * abs_vel
 
 
+class SimuSampleSpeed(SimuNoDragUpdate):
+    """Not tumbling. Sampling velocity. No drag update."""
+    def __init__(self) -> None:
+        super().__init__()
+
+    def sampler(self) -> None:
+        self.velocity[:, 0] = np.random.lognormal(size=self.bacteria_nb)
+        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
+        self.update_force()
+
+
+class SimuSampleDragForce(SimuNoDragUpdate):
+    """Not tumbling. Sampling force and drag. No drag update."""
+
+    def sampler(self) -> None:
+        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        drag = np.random.normal(loc=10, size=self.bacteria_nb)
+        drag[drag <= 0] = 0.2
+        self.drag[:, 0] = drag
+        self.force[:, 0] = np.random.normal(size=self.bacteria_nb)
+        self.velocity[:, 0] = self.force[:, 0] / self.drag[:, 0]
+
 if __name__ == "__main__":
-    simu = Simu1()
+    simu = SimuSampleSpeed()
     simu.sampler()
     simu.process()
 
