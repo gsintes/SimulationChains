@@ -86,7 +86,9 @@ class PostProcessing:
         for i, length in enumerate(lengths):
             mins_vel[i] = self.chains[self.chains.chain_length==length].vel.min()
         plt.figure()
-        plt.plot(lengths, mins_vel)
+        plt.xlabel("Chain length")
+        plt.ylabel("Minimal velocity")
+        plt.plot(lengths, mins_vel, linestyle="", marker="o")
         plt.savefig(os.path.join(self.fig_folder, "min.png"))
 
     def plot_max(self) -> None:
@@ -97,7 +99,9 @@ class PostProcessing:
             maxs_vel[i] = self.chains[self.chains.chain_length==length].vel.max()
 
         plt.figure()
-        plt.plot(lengths, maxs_vel)
+        plt.xlabel("Chain length")
+        plt.ylabel("Maximal velocity")
+        plt.plot(lengths, maxs_vel, linestyle="", marker="o")
         plt.savefig(os.path.join(self.fig_folder, "max.png"))
 
     def visualisation(self) -> None:
@@ -131,21 +135,21 @@ class PostProcessing:
 
 if __name__=="""__main__""":
     
-    # simu_max = sim.SimulationMax()
-    # pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
-    # pp.process()
+    simu_max = sim.SimulationMax()
+    pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
+    pp.process()
 
-    # simu_df = sim.SimuSampleDragForce()
-    # pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
-    # pp.process()
+    simu_df = sim.SimuSampleDragForce()
+    pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
+    pp.process()
 
-    # simu_v = sim.SimuSampleSpeed()
-    # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    # pp.process()
+    simu_v = sim.SimuSampleSpeed()
+    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    pp.process()
 
-    # simu_v = sim.SimuSampleSpeed()
-    # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    # pp.process()
+    simu_v = sim.SimuSampleSpeed()
+    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    pp.process()
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     simu_d = sim.SimuSampleData(data=data)
