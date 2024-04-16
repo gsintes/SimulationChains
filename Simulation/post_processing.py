@@ -1,5 +1,8 @@
 """Post-processing the simulation."""
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from typing import List
 import os
 import shutil
@@ -121,6 +124,7 @@ if __name__=="""__main__""":
     pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
     pp.process()
 
-    simu_d = sim.SimuSampleData()
-    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromData")
+    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    simu_d = sim.SimuSampleData(data=data)
+    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromData")
     pp.process()

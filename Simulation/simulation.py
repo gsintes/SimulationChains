@@ -185,8 +185,9 @@ class SimuSampleData(SimuNoDragUpdate):
         _vel = data1.velocity.dropna()
         self.vel = np.array(_vel)
         self.vel.sort()
+        self.sample_size = len(_vel)
 
-        abs_vel = [self.sample_vel() for _ in range(self.bacteria_nb)]
+        abs_vel = np.array([self.sample_vel() for _ in range(self.bacteria_nb)])
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
