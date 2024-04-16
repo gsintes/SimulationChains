@@ -4,13 +4,15 @@ from abc import ABC, abstractmethod
 from math import isclose
 
 import numpy as np
+import pandas as pd
+
 from utils import timeit
 
 class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
     def __init__(self,
-                 nb_bacteria: int=2000,
-                 nb_collisions: int=500) -> None:
+                 nb_bacteria: int=1000,
+                 nb_collisions: int=200) -> None:
         self.bacteria_nb= nb_bacteria
         self.collisions_nb = nb_collisions
 
@@ -25,7 +27,8 @@ class Simulation(ABC):
         self.step = 0
 
         self.chains = np.array([np.identity(self.bacteria_nb) for _ in range(self.collisions_nb +1)])
-    
+
+        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
     @abstractmethod
     def update_vel(self) -> None:
         """Update the velocities after collisions"""
@@ -125,8 +128,6 @@ class SimulationMax(Simulation):
         abs_vel = np.random.lognormal(size=self.bacteria_nb)
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
-
-        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
 
@@ -162,16 +163,40 @@ class SimuSampleSpeed(SimuNoDragUpdate):
         abs_vel = np.random.lognormal(size=self.bacteria_nb)
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
-        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
+        
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
+
+class SimuSampleData(SimuNoDragUpdate):
+    """Not tumbling. No drag update. Sampling velocity from actual distribution."""
+    def __init__(self, data: pd.DataFrame) -> None:
+        super().__init__()
+        self.data = data
+
+    def sample_vel(self) -> float:
+        x = np.random.uniform(0, self.sample_size - 1)
+        i = int(np.floor(x))
+        p = x - i
+        vel = (1 - p) * self.vel[i] + p * self.vel[i + 1]
+        return vel
+    
+    def sampler(self) -> None:
+        data1 = self.data[self.data.chain_length==1]
+        _vel = data1.velocity.dropna()
+        self.vel = np.array(_vel)
+        self.vel.sort()
+
+        abs_vel = [self.sample_vel() for _ in range(self.bacteria_nb)]
+        sign = np.random.choice([-1, 1], size=abs_vel.shape)
+        self.velocity[:, 0] = sign * abs_vel
+        self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
+        self.update_force()        
 
 
 class SimuSampleDragForce(SimuNoDragUpdate):
     """Not tumbling. Sampling force and drag. No drag update."""
 
     def sampler(self) -> None:
-        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
         drag = np.random.normal(loc=10, size=self.bacteria_nb)
         drag[drag <= 0] = 0.2
         self.drag[:, 0] = drag
