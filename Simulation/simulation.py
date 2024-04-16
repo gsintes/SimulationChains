@@ -100,7 +100,6 @@ class Simulation(ABC):
         self.update_force()
         self.tumble()
 
-    @timeit
     def process(self) -> None:
         self.sampler()
         self.get_chains()

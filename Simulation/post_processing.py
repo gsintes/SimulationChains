@@ -67,7 +67,7 @@ class PostProcessing:
         })
         self.chains.to_csv(os.path.join(self.fig_folder, "data.csv"))
 
-    def plot(self) -> None:
+    def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
         plt.figure()
         sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
@@ -78,6 +78,27 @@ class PostProcessing:
         sns.scatterplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthScatter.png"))
         plt.close()
+
+    def plot_min(self) -> None:
+        """Plot the minimal velocity for each chain length"""
+        lengths = self.chains.chain_length.unique()
+        mins_vel = np.zeros(len(lengths))
+        for i, length in enumerate(lengths):
+            mins_vel[i] = self.chains[self.chains.chain_length==length].vel.min()
+        plt.figure()
+        plt.plot(lengths, mins_vel)
+        plt.savefig(os.path.join(self.fig_folder, "min.png"))
+
+    def plot_max(self) -> None:
+        """Plot the minimal velocity for each chain length"""
+        lengths = self.chains.chain_length.unique()
+        maxs_vel = np.zeros(len(lengths))
+        for i, length in enumerate(lengths):
+            maxs_vel[i] = self.chains[self.chains.chain_length==length].vel.max()
+
+        plt.figure()
+        plt.plot(lengths, maxs_vel)
+        plt.savefig(os.path.join(self.fig_folder, "max.png"))
 
     def visualisation(self) -> None:
         """Make a visualisation of the simulation."""
@@ -101,28 +122,30 @@ class PostProcessing:
 
     def process(self) -> None:
         """Run the post processing."""
-        pp.get_chains()
-        pp.plot()
-        pp.visualisation()
+        self.get_chains()
+        self.plot_vel()
+        self.plot_min()
+        self.plot_max()
+        self.visualisation()
 
 
 if __name__=="""__main__""":
     
-    simu_max = sim.SimulationMax()
-    pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
-    pp.process()
+    # simu_max = sim.SimulationMax()
+    # pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
+    # pp.process()
 
-    simu_df = sim.SimuSampleDragForce()
-    pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
-    pp.process()
+    # simu_df = sim.SimuSampleDragForce()
+    # pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
+    # pp.process()
 
-    simu_v = sim.SimuSampleSpeed()
-    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    pp.process()
+    # simu_v = sim.SimuSampleSpeed()
+    # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    # pp.process()
 
-    simu_v = sim.SimuSampleSpeed()
-    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    pp.process()
+    # simu_v = sim.SimuSampleSpeed()
+    # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    # pp.process()
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     simu_d = sim.SimuSampleData(data=data)
