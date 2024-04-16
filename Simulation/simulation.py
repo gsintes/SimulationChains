@@ -126,7 +126,7 @@ class SimulationMax(Simulation):
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
 
-        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
 
@@ -162,7 +162,7 @@ class SimuSampleSpeed(SimuNoDragUpdate):
         abs_vel = np.random.lognormal(size=self.bacteria_nb)
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
-        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
 
@@ -171,7 +171,7 @@ class SimuSampleDragForce(SimuNoDragUpdate):
     """Not tumbling. Sampling force and drag. No drag update."""
 
     def sampler(self) -> None:
-        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
         drag = np.random.normal(loc=10, size=self.bacteria_nb)
         drag[drag <= 0] = 0.2
         self.drag[:, 0] = drag
