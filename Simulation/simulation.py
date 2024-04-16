@@ -9,8 +9,8 @@ from utils import timeit
 class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
     def __init__(self,
-                 nb_bacteria: int=1000,
-                 nb_collisions: int=1000) -> None:
+                 nb_bacteria: int=2000,
+                 nb_collisions: int=500) -> None:
         self.bacteria_nb= nb_bacteria
         self.collisions_nb = nb_collisions
 
@@ -105,6 +105,31 @@ class Simulation(ABC):
             self.step_process()
 
 
+class SimulationMax(Simulation):
+    """Simulation with an update of the velocity keeping the max."""
+    def tumble(self) -> None:
+        pass
+
+    def update_drag(self) -> None:
+        self.drag[:, self.step] = self.drag[:, self.step -1]
+
+    def update_vel(self) -> None:
+        chains = self.chains[self.step, :, :]
+        drag = self.drag[:, self.step - 1]
+        forces_in_chains = self.velocity[:, self.step - 1] * drag * chains
+        abs_vel = np.max(np.abs(self.velocity[:, self.step - 1] * chains), axis=1)
+        sign = np.sign(forces_in_chains.sum(axis=1))
+        self.velocity[:, self.step] = sign * abs_vel
+
+    def sampler(self) -> None:
+        abs_vel = np.random.lognormal(size=self.bacteria_nb)
+        sign = np.random.choice([-1, 1], size=abs_vel.shape)
+        self.velocity[:, 0] = sign * abs_vel
+
+        self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
+        self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
+        self.update_force()
+
 class SimuNoDragUpdate(Simulation):
     def __init__(self) -> None:
         super().__init__()
@@ -134,7 +159,9 @@ class SimuSampleSpeed(SimuNoDragUpdate):
         super().__init__()
 
     def sampler(self) -> None:
-        self.velocity[:, 0] = np.random.lognormal(size=self.bacteria_nb)
+        abs_vel = np.random.lognormal(size=self.bacteria_nb)
+        sign = np.random.choice([-1, 1], size=abs_vel.shape)
+        self.velocity[:, 0] = sign * abs_vel
         self.position[:, 0] = 1000 * np.arange(self.bacteria_nb)
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
@@ -152,9 +179,9 @@ class SimuSampleDragForce(SimuNoDragUpdate):
         self.velocity[:, 0] = self.force[:, 0] / self.drag[:, 0]
 
 if __name__ == "__main__":
-    simu = SimuSampleSpeed()
+    simu = SimulationMax()
     simu.sampler()
     simu.process()
 
-    print(simu.velocity[:, -1])
+    print(simu.velocity)
     print(np.abs(simu.velocity[:, 0]).mean())

@@ -1,7 +1,10 @@
 """Post-processing the simulation."""
 
+from typing import List
+
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import simulation as sim
 
@@ -12,13 +15,13 @@ class PostProcessing:
 
     def get_chains(self) -> None:
         """Get the chains at each time step."""
-        count = 0
-        id = []
-        bact_nb = []
-        steps = []
-        time = []
-        length = []
-        vel = []
+        count: int = 0
+        id: List[int] = []
+        bact_nb: List[int] = []
+        steps: List[int] = []
+        time: List[float] = []
+        length: List[int] = []
+        vel: List[float] = []
 
         for step in range(self.simu.collisions_nb):
             chains = self.simu.chains[step, :, :]
@@ -29,7 +32,7 @@ class PostProcessing:
                     bact_nb.append(i)
                     l = chains[i, :].sum()
                     length.append(l)
-                    vel.append(self.simu.velocity[i, step])
+                    vel.append(abs(self.simu.velocity[i, step]))
                     try:
                         ind = id.index(i)
                         if l == length[ind]:
@@ -49,8 +52,11 @@ class PostProcessing:
         })
 
 if __name__=="""__main__""":
-    simu = sim.SimuSampleDragForce()
+    simu = sim.SimulationMax()
     pp = PostProcessing(simu)
     pp.get_chains()
     pp.chains.plot(x="chain_length", y="vel", marker="o", linestyle="")
+    
+    plt.figure()
+    sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
     plt.show(block=True)
