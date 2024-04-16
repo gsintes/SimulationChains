@@ -62,6 +62,19 @@ class PostProcessing:
             "one": one,
             "position": position
         })
+        self.chains.to_csv(os.path.join(self.fig_folder, "data.csv"))
+
+    def plot(self) -> None:
+        """Plot the velocity with chain length."""
+        plt.figure()
+        sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
+        plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthError.png"))
+        plt.close()
+
+        plt.figure()
+        sns.scatterplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
+        plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthScatter.png"))
+        plt.close()
 
     def visualisation(self) -> None:
         """Make a visualisation of the simulation."""
@@ -74,7 +87,7 @@ class PostProcessing:
         self.chains["vis_pos"] = self.chains.position % self.width_vis_window
         y_min = self.chains.one.min() + 0.1
         y_max = self.chains.one.max() + 0.1
-        for i in range(simu.collisions_nb):
+        for i in range(self.simu.collisions_nb):
             plt.figure(figsize=(10, 8))
             plt.ylim((y_min, y_max))
             sub_data = self.chains[self.chains.step == i]
@@ -83,14 +96,31 @@ class PostProcessing:
             plt.savefig(os.path.join(vis_folder, f"{i}.png"))
             plt.close()
 
+    def process(self) -> None:
+        """Run the post processing."""
+        pp.get_chains()
+        pp.plot()
+        pp.visualisation()
+
 
 if __name__=="""__main__""":
-    simu = sim.SimulationMax(nb_bacteria=1000, nb_collisions=500)
-    pp = PostProcessing(simu, "/Users/sintes/Desktop/Test")
-    pp.get_chains()
-    pp.visualisation()
-    pp.chains.plot(x="chain_length", y="vel", marker="o", linestyle="")
+    
+    simu_max = sim.SimulationMax()
+    pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
+    pp.process()
 
-    plt.figure()
-    sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
-    plt.show(block=True)
+    simu_df = sim.SimuSampleDragForce()
+    pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
+    pp.process()
+
+    simu_v = sim.SimuSampleSpeed()
+    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    pp.process()
+
+    simu_v = sim.SimuSampleSpeed()
+    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    pp.process()
+
+    simu_d = sim.SimuSampleData()
+    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromData")
+    pp.process()
