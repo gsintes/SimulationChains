@@ -119,8 +119,8 @@ class PostProcessing:
             shutil.rmtree(vis_folder)
             os.makedirs(vis_folder)
         self.chains["vis_pos"] = self.chains.position % self.width_vis_window
-        y_min = self.chains.one.min() + 0.1
-        y_max = self.chains.one.max() + 0.1
+        y_min = self.chains.one.min() - 1
+        y_max = self.chains.one.max() + 1
         for i in range(self.simu.collisions_nb):
             plt.figure(figsize=(10, 8))
             plt.ylim((y_min, y_max))
@@ -164,5 +164,10 @@ if __name__=="""__main__""":
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     simu_d = sim.SimuSampleData(data, 1000, 500)
-    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromData")
+    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
+    pp.process(visualisation=True)
+
+    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    simu_d = sim.SimuSampleData(data, 1000, 500, position_random=True)
+    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
     pp.process(visualisation=True)

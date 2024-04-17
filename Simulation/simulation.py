@@ -12,7 +12,8 @@ class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
     def __init__(self,
                  nb_bacteria: int=1000,
-                 nb_collisions: int=200) -> None:
+                 nb_collisions: int=200,
+                 position_random: bool=False) -> None:
         self.bacteria_nb= nb_bacteria
         self.collisions_nb = nb_collisions
 
@@ -27,8 +28,10 @@ class Simulation(ABC):
         self.step = 0
 
         self.chains = np.array([np.identity(self.bacteria_nb) for _ in range(self.collisions_nb +1)])
-
-        self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
+        if position_random:
+            self.position[:, 0] = 10000 * np.random.random(size=self.bacteria_nb)
+        else:
+            self.position[:, 0] = 10000  * np.arange(self.bacteria_nb) / self.bacteria_nb
     @abstractmethod
     def update_vel(self) -> None:
         """Update the velocities after collisions"""
@@ -131,8 +134,8 @@ class SimulationMax(Simulation):
         self.update_force()
 
 class SimuNoDragUpdate(Simulation):
-    def __init__(self, nb_bacteria: int=1000, nb_collisions: int =100) -> None:
-        super().__init__(nb_bacteria, nb_collisions)
+    def __init__(self, nb_bacteria: int=1000, nb_collisions: int =100, position_random: bool= True) -> None:
+        super().__init__(nb_bacteria, nb_collisions, position_random)
     
     def tumble(self) -> None:
         pass
@@ -168,8 +171,8 @@ class SimuSampleSpeed(SimuNoDragUpdate):
 
 class SimuSampleData(SimuNoDragUpdate):
     """Not tumbling. No drag update. Sampling velocity from actual distribution."""
-    def __init__(self, data: pd.DataFrame, nb_bacteria: int=1000, nb_collisions: int=100) -> None:
-        super().__init__(nb_bacteria=nb_bacteria, nb_collisions=nb_collisions)
+    def __init__(self, data: pd.DataFrame, nb_bacteria: int=1000, nb_collisions: int=100, position_random: bool=False) -> None:
+        super().__init__(nb_bacteria=nb_bacteria, nb_collisions=nb_collisions, position_random=position_random)
         self.data = data
 
     def sample_vel(self) -> float:
