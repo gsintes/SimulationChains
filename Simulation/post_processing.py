@@ -19,7 +19,7 @@ class PostProcessing:
         self.simu = simulation
         self.simu.process()
         self.fig_folder = fig_folder
-        self.width_vis_window = 2000
+        self.width_vis_window = 200
 
     def get_chains(self) -> None:
         """Get the chains at each time step."""
@@ -32,6 +32,7 @@ class PostProcessing:
         vel: List[float] = []
         position: List[float] = []
         one: List[int] = []
+        step_appear: List[int] = []
         for step in range(self.simu.collisions_nb):
             chains = self.simu.chains[step, :, :]
             for i in range(self.simu.bacteria_nb):
@@ -49,16 +50,20 @@ class PostProcessing:
                         ind = id.index(i)
                         if l == length[ind]:
                             id.append(id[ind])
+                            step_appear.append(step_appear[ind])
                         else:
                             id.append(count)
+                            step_appear.append(step)
                             count += 1
                     except ValueError:
                         id.append(count)
+                        step_appear.append(step)
                         count += 1
 
         self.chains = pd.DataFrame({
             "id": id,
             "step": steps,
+            "step_appear": step_appear,
             "time": time,
             "chain_length": length,
             "vel": vel,
@@ -69,13 +74,14 @@ class PostProcessing:
 
     def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
+        data = pp.chains.drop_duplicates("id")
         plt.figure()
-        sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
+        sns.pointplot(data=pp.chains, x="chain_length", y="vel", hue="step_appear", linestyle="", native_scale=True, errorbar=None)
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthError.png"))
         plt.close()
 
         plt.figure()
-        sns.scatterplot(data=pp.chains, x="chain_length", y="vel", linestyle="")
+        sns.scatterplot(data=data, x="chain_length", y="vel", hue="step_appear", linestyle="")
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthScatter.png"))
         plt.close()
 
@@ -118,40 +124,45 @@ class PostProcessing:
         for i in range(self.simu.collisions_nb):
             plt.figure(figsize=(10, 8))
             plt.ylim((y_min, y_max))
+            plt.xlim((-5, self.width_vis_window + 5))
             sub_data = self.chains[self.chains.step == i]
-            sns.scatterplot(data=sub_data, x="vis_pos", y="one", linestyle="", hue="chain_length", marker=".", palette=sns.color_palette("plasma"))
+            lengthes = sub_data.chain_length.unique()
+            lengthes.sort()
+            for length in lengthes:
+                sub_sub = sub_data[sub_data.chain_length==length]
+                plt.plot(sub_sub.vis_pos, sub_sub.one, linestyle="", color="b", markersize=5 * length, marker=".", label=length)
+
+            plt.legend(loc="center left", title="Chain length", bbox_to_anchor=(1.04, 0.5))
             plt.title(f"Collision number : {i}")
-            plt.savefig(os.path.join(vis_folder, f"{i}.png"))
+            plt.savefig(os.path.join(vis_folder, f"{i}.png"), bbox_inches="tight")
             plt.close()
 
-    def process(self) -> None:
+    def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
         self.get_chains()
         self.plot_vel()
         self.plot_min()
         self.plot_max()
-        self.visualisation()
+        if visualisation:
+            self.visualisation()
 
 
 if __name__=="""__main__""":
     
-    simu_max = sim.SimulationMax()
-    pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
-    pp.process()
+    # simu_max = sim.SimulationMax()
+    # pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
+    # pp.process()
 
-    simu_df = sim.SimuSampleDragForce()
-    pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
-    pp.process()
+    # simu_df = sim.SimuSampleDragForce()
+    # pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
+    # pp.process()
 
-    simu_v = sim.SimuSampleSpeed()
-    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    pp.process()
+    # simu_v = sim.SimuSampleSpeed()
+    # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
+    # pp.process()
 
-    simu_v = sim.SimuSampleSpeed()
-    pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
-    pp.process()
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    simu_d = sim.SimuSampleData(data=data)
+    simu_d = sim.SimuSampleData(data, 1000, 500)
     pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromData")
-    pp.process()
+    pp.process(visualisation=True)

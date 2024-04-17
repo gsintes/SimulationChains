@@ -131,8 +131,8 @@ class SimulationMax(Simulation):
         self.update_force()
 
 class SimuNoDragUpdate(Simulation):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, nb_bacteria: int=1000, nb_collisions: int =100) -> None:
+        super().__init__(nb_bacteria, nb_collisions)
     
     def tumble(self) -> None:
         pass
@@ -168,8 +168,8 @@ class SimuSampleSpeed(SimuNoDragUpdate):
 
 class SimuSampleData(SimuNoDragUpdate):
     """Not tumbling. No drag update. Sampling velocity from actual distribution."""
-    def __init__(self, data: pd.DataFrame) -> None:
-        super().__init__()
+    def __init__(self, data: pd.DataFrame, nb_bacteria: int=1000, nb_collisions: int=100) -> None:
+        super().__init__(nb_bacteria=nb_bacteria, nb_collisions=nb_collisions)
         self.data = data
 
     def sample_vel(self) -> float:
