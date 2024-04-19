@@ -33,6 +33,7 @@ class PostProcessing:
             chains_simu = self.get_chains()
             chains_simu["Simu_nb"] = i
             self.chains = pd.concat((self.chains, chains_simu), ignore_index=True)
+        self.chains.to_csv(os.path.join(self.fig_folder, "data.csv"))
 
     def get_chains(self) -> pd.DataFrame:
         """Get the chains at each time step."""
@@ -123,6 +124,32 @@ class PostProcessing:
         plt.plot(lengths, maxs_vel, linestyle="", marker="o")
         plt.savefig(os.path.join(self.fig_folder, "max.png"))
 
+    def plot_histogram_chain_length(self) -> None:
+        """Plot the histogram of chain length."""
+        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
+        plt.figure()
+        sns.histplot(data=data, x="chain_length")
+        plt.savefig(os.path.join(self.fig_folder, "length_hist.png"))
+        plt.close()
+
+    def histogram_velocity(self) -> None:
+        """Make the histogram of velocity by chain length."""
+        vis_folder = os.path.join(self.fig_folder,"Velocity_histograms")
+        try:
+            os.makedirs(vis_folder)
+        except FileExistsError:
+            shutil.rmtree(vis_folder)
+            os.makedirs(vis_folder)
+
+        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
+        lengthes = data.chain_length.unique()
+        for l in lengthes:
+            sub_data = data[data.chain_length==l]
+            plt.figure()
+            sns.histplot(data=sub_data, x="vel")
+            plt.savefig(os.path.join(vis_folder, f"hist_vel_length_{l}.png"))
+            plt.close()
+
     def visualisation(self) -> None:
         """Make a visualisation of the simulation."""
         vis_folder = os.path.join(self.fig_folder,"Visualisation")
@@ -177,6 +204,8 @@ class PostProcessing:
         self.plot_vel()
         self.plot_min()
         self.plot_max()
+        self.plot_histogram_chain_length()
+        self.histogram_velocity()
         if visualisation:
             self.visualisation()
             self.mean_speed_evolution()
@@ -205,4 +234,4 @@ if __name__=="""__main__""":
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     simu_d = sim.SimuSampleData(data, 1000, 500, position_random=True)
     pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing", nb_simu=50)
-    pp.process(visualisation=True)
+    pp.process(visualisation=False)
