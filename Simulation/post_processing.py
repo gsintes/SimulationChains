@@ -15,13 +15,26 @@ import numpy as np
 import simulation as sim
 
 class PostProcessing:
-    def __init__(self, simulation: sim.Simulation, fig_folder: str) -> None:
+    def __init__(self, simulation: sim.Simulation, fig_folder: str, nb_simu: int=1) -> None:
         self.simu = simulation
         self.simu.process()
         self.fig_folder = fig_folder
         self.width_vis_window = 200
+        self.nb_simu = nb_simu
 
-    def get_chains(self) -> None:
+    def run_simu(self) -> None:
+        """Run the simulation."""
+        self.simu.process()
+        chains_simu = self.get_chains()
+        chains_simu["Simu_nb"] = 0
+        self.chains = chains_simu
+        for i in range(1, self.nb_simu):
+            self.simu.process()
+            chains_simu = self.get_chains()
+            chains_simu["Simu_nb"] = i
+            self.chains = pd.concat((self.chains, chains_simu), ignore_index=True)
+
+    def get_chains(self) -> pd.DataFrame:
         """Get the chains at each time step."""
         count: int = 0
         id: List[int] = []
@@ -60,7 +73,7 @@ class PostProcessing:
                         step_appear.append(step)
                         count += 1
 
-        self.chains = pd.DataFrame({
+        chains = pd.DataFrame({
             "id": id,
             "step": steps,
             "step_appear": step_appear,
@@ -70,13 +83,13 @@ class PostProcessing:
             "one": one,
             "position": position
         })
-        self.chains.to_csv(os.path.join(self.fig_folder, "data.csv"))
+        return chains
 
     def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
-        data = pp.chains.drop_duplicates("id")
+        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
         plt.figure()
-        sns.pointplot(data=pp.chains, x="chain_length", y="vel", hue="step_appear", linestyle="", native_scale=True, errorbar=None)
+        sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None)
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthError.png"))
         plt.close()
 
@@ -133,18 +146,40 @@ class PostProcessing:
                 plt.plot(sub_sub.vis_pos, sub_sub.one, linestyle="", color="b", markersize=5 * length, marker=".", label=length)
 
             plt.legend(loc="center left", title="Chain length", bbox_to_anchor=(1.04, 0.5))
-            plt.title(f"Collision number : {i}")
+            plt.title(f"Collision number : {i}, time: {sum(self.simu.time_collision[:i + 1]):.2f}s")
             plt.savefig(os.path.join(vis_folder, f"{i}.png"), bbox_inches="tight")
             plt.close()
 
+    def mean_speed_evolution(self) -> None:
+        """Make a visualisation of speed evolution."""
+        vis_folder = os.path.join(self.fig_folder,"Speed evolution")
+        try:
+            os.makedirs(vis_folder)
+        except FileExistsError:
+            shutil.rmtree(vis_folder)
+            os.makedirs(vis_folder)
+        min_vel = self.chains.vel.min()
+        max_vel = self.chains.vel.max()
+        max_chain_length = self.chains.chain_length.max()
+        for i in range(self.simu.collisions_nb):
+            sub_data = self.chains[self.chains.step==i]
+            plt.figure()
+            plt.ylim((min_vel - 1, max_vel + 1))
+            plt.xlim((0.9, max_chain_length + 1))
+            sns.pointplot(data=sub_data, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None)
+            plt.title(f"Collision number : {i}, time: {sum(self.simu.time_collision[:i + 1]):.2f}s")
+            plt.savefig(os.path.join(vis_folder, f"{i}.png"))
+            plt.close()
+        
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
-        self.get_chains()
+        self.run_simu()
         self.plot_vel()
         self.plot_min()
         self.plot_max()
         if visualisation:
             self.visualisation()
+            self.mean_speed_evolution()
 
 
 if __name__=="""__main__""":
@@ -162,12 +197,12 @@ if __name__=="""__main__""":
     # pp.process()
 
 
-    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    simu_d = sim.SimuSampleData(data, 1000, 500)
-    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
-    pp.process(visualisation=True)
+    # data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    # simu_d = sim.SimuSampleData(data, 1000, 500, initial_size=10000)
+    # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
+    # pp.process(visualisation=True)
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     simu_d = sim.SimuSampleData(data, 1000, 500, position_random=True)
-    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
+    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing", nb_simu=50)
     pp.process(visualisation=True)
