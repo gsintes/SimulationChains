@@ -1,21 +1,26 @@
 """Run the simulation of chains in single lane swimming."""
 
+import os
+from typing import List
 from abc import ABC, abstractmethod
 from math import isclose
 
 import numpy as np
 import pandas as pd
 
-from utils import timeit
 
 class Simulation(ABC):
     """Simulation of chains in single lane swimming."""
     def __init__(self,
-                 nb_bacteria: int=1000,
-                 nb_collisions: int=200,
-                 position_random: bool=False,
-                 initial_size: int= 10000)-> None:
+                saving_folder: str,
+                nb_bacteria: int=1000,
+                nb_collisions: int=200,
+                nb_simu: int = 1,
+                position_random: bool = False,
+                initial_size: int = 10000)-> None:
+        self.saving_folder = saving_folder
         self.bacteria_nb= nb_bacteria
+        self.nb_simu = nb_simu
         self.collisions_nb = nb_collisions
         self.initial_size = initial_size
         self.position_random = position_random
@@ -118,6 +123,66 @@ class Simulation(ABC):
         for _ in range(self.collisions_nb):
             self.step_process()
 
+    def run_simu(self) -> None:
+        """Run the simulation."""
+        self.process()
+        chains_simu = self.get_chains_data()
+        chains_simu["Simu_nb"] = 0
+        self.chains_data = chains_simu
+        for j in range(1, self.nb_simu):
+            self.process()
+            chains_simu = self.get_chains_data()
+            chains_simu["Simu_nb"] = j
+            self.chains_data = pd.concat((self.chains_data, chains_simu), ignore_index=True)
+        self.chains_data.to_csv(os.path.join(self.saving_folder, "data.csv"), index=False)
+
+    def get_chains_data(self) -> pd.DataFrame:
+        """Get the chains at each time step into a dataFrame."""
+        count: int = 0
+        id: List[int] = []
+        bact_nb: List[int] = []
+        steps: List[int] = []
+        time: List[float] = []
+        length: List[int] = []
+        vel: List[float] = []
+        position: List[float] = []
+        step_appear: List[int] = []
+        for step in range(self.collisions_nb):
+            chains = self.chains[step, :, :]
+            for i in range(self.bacteria_nb):
+                if sum(chains[i, :i]) == 0:
+                    steps.append(step)
+                    time.append(sum(self.time_collision[:step + 1]))
+                    bact_nb.append(i)
+                    l = chains[i, :].sum()
+                    length.append(int(l))
+                    vel.append(abs(self.velocity[i, step]))
+                    pos = self.position[i, step]
+                    position.append(pos)
+                    try:
+                        ind = id.index(i)
+                        if l == length[ind]:
+                            id.append(id[ind])
+                            step_appear.append(step_appear[ind])
+                        else:
+                            id.append(count)
+                            step_appear.append(step)
+                            count += 1
+                    except ValueError:
+                        id.append(count)
+                        step_appear.append(step)
+                        count += 1
+
+        chains_data = pd.DataFrame({
+            "id": id,
+            "step": steps,
+            "step_appear": step_appear,
+            "time": time,
+            "chain_length": length,
+            "vel": vel,
+            "position": position
+        })
+        return chains_data
 
 class SimulationMax(Simulation):
     """Simulation with an update of the velocity keeping the max."""
@@ -176,10 +241,20 @@ class SimuSampleSpeed(SimuNoDragUpdate):
 
 class SimuSampleData(SimuNoDragUpdate):
     """Not tumbling. No drag update. Sampling velocity from actual distribution."""
-    def __init__(self, data: pd.DataFrame, nb_bacteria: int=1000, nb_collisions: int=100, position_random: bool=False,
+    def __init__(self, 
+                 saving_folder: str,
+                 data: pd.DataFrame,
+                 nb_bacteria: int=1000,
+                 nb_collisions: int=100,
+                 nb_simu: int = 1,
+                 position_random: bool=False,
                  initial_size: int= 10000) -> None:
-        super().__init__(nb_bacteria=nb_bacteria, nb_collisions=nb_collisions, position_random=position_random,
-                 initial_size=initial_size)
+        super().__init__(saving_folder=saving_folder,
+                        nb_bacteria=nb_bacteria,
+                        nb_collisions=nb_collisions,
+                        nb_simu=nb_simu,
+                        position_random=position_random,
+                        initial_size=initial_size)
         self.data = data
 
     def sample_vel(self) -> float:
@@ -214,9 +289,7 @@ class SimuSampleDragForce(SimuNoDragUpdate):
         self.velocity[:, 0] = self.force[:, 0] / self.drag[:, 0]
 
 if __name__ == "__main__":
-    simu = SimulationMax()
-    simu.sampler()
-    simu.process()
-
-    print(simu.velocity)
-    print(np.abs(simu.velocity[:, 0]).mean())
+    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    folder = "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing"
+    simu = SimuSampleData(saving_folder=folder, data=data, nb_bacteria=10, nb_collisions=3, position_random=False, nb_simu=1)
+    simu.run_simu()

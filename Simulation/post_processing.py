@@ -15,80 +15,14 @@ import numpy as np
 import simulation as sim
 
 class PostProcessing:
-    def __init__(self, simulation: sim.Simulation, fig_folder: str, nb_simu: int=1) -> None:
-        self.simu = simulation
-        self.simu.process()
+    def __init__(self, fig_folder: str) -> None:
+        self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
         self.fig_folder = fig_folder
         self.width_vis_window = 200
-        self.nb_simu = nb_simu
-
-    def run_simu(self) -> None:
-        """Run the simulation."""
-        self.simu.process()
-        chains_simu = self.get_chains()
-        chains_simu["Simu_nb"] = 0
-        self.chains = chains_simu
-        for i in range(1, self.nb_simu):
-            self.simu.process()
-            chains_simu = self.get_chains()
-            chains_simu["Simu_nb"] = i
-            self.chains = pd.concat((self.chains, chains_simu), ignore_index=True)
-        self.chains.to_csv(os.path.join(self.fig_folder, "data.csv"))
-
-    def get_chains(self) -> pd.DataFrame:
-        """Get the chains at each time step."""
-        count: int = 0
-        id: List[int] = []
-        bact_nb: List[int] = []
-        steps: List[int] = []
-        time: List[float] = []
-        length: List[int] = []
-        vel: List[float] = []
-        position: List[float] = []
-        one: List[int] = []
-        step_appear: List[int] = []
-        for step in range(self.simu.collisions_nb):
-            chains = self.simu.chains[step, :, :]
-            for i in range(self.simu.bacteria_nb):
-                if sum(chains[i, :i]) == 0:
-                    steps.append(step)
-                    time.append(sum(self.simu.time_collision[:step + 1]))
-                    bact_nb.append(i)
-                    l = chains[i, :].sum()
-                    length.append(int(l))
-                    vel.append(abs(self.simu.velocity[i, step]))
-                    pos = self.simu.position[i, step]
-                    position.append(pos)
-                    one.append(pos // self.width_vis_window)
-                    try:
-                        ind = id.index(i)
-                        if l == length[ind]:
-                            id.append(id[ind])
-                            step_appear.append(step_appear[ind])
-                        else:
-                            id.append(count)
-                            step_appear.append(step)
-                            count += 1
-                    except ValueError:
-                        id.append(count)
-                        step_appear.append(step)
-                        count += 1
-
-        chains = pd.DataFrame({
-            "id": id,
-            "step": steps,
-            "step_appear": step_appear,
-            "time": time,
-            "chain_length": length,
-            "vel": vel,
-            "one": one,
-            "position": position
-        })
-        return chains
 
     def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
-        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
+        data = self.chains.drop_duplicates(("Simu_nb", "id"))
         plt.figure()
         sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None)
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthError.png"))
@@ -200,13 +134,12 @@ class PostProcessing:
         
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
-        self.run_simu()
         self.plot_vel()
         self.plot_min()
         self.plot_max()
         self.plot_histogram_chain_length()
         self.histogram_velocity()
-        if visualisation:
+        if visualisation and len(self.chains.Simu_nb.unique())==1:
             self.visualisation()
             self.mean_speed_evolution()
 
@@ -232,6 +165,5 @@ if __name__=="""__main__""":
     # pp.process(visualisation=True)
 
     data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    simu_d = sim.SimuSampleData(data, 1000, 500, position_random=True)
-    pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing", nb_simu=50)
+    pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
     pp.process(visualisation=False)
