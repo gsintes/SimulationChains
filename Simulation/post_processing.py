@@ -24,7 +24,8 @@ class PostProcessing:
         """Plot the velocity with chain length."""
         data = self.chains.drop_duplicates(("Simu_nb", "id"))
         plt.figure()
-        sns.pointplot(data=pp.chains, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None)
+        sns.pointplot(data=data, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None, label="Simulation")
+        sns.pointplot(data=DATA, x="chain_length", y="velocity", linestyle="", native_scale=True, errorbar=None, label="Experiment")
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthError.png"))
         plt.close()
 
@@ -62,7 +63,7 @@ class PostProcessing:
         """Plot the histogram of chain length."""
         data = pp.chains.drop_duplicates(("Simu_nb", "id"))
         plt.figure()
-        sns.histplot(data=data, x="chain_length")
+        sns.histplot(data=data, x="chain_length", stat="density", discrete=True)
         plt.savefig(os.path.join(self.fig_folder, "length_hist.png"))
         plt.close()
 
@@ -164,6 +165,7 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
     # pp.process(visualisation=True)
 
-    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
+    DATA = pd.read_csv("/Users/sintes/Desktop/chain_data.csv")
+    DATA = DATA[DATA.chain_length <= 8]
+    pp = PostProcessing( "/Users/sintes/Desktop/FromDataRandomSpacing")
     pp.process(visualisation=False)
