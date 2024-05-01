@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-import simulation as sim
 
 class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
@@ -156,6 +155,21 @@ class PostProcessing:
             plt.savefig(os.path.join(vis_folder, f"{i}.png"))
             plt.close()
         
+    def vel_vs_time(self) -> None:
+        """Plot the velocity for the different length with time."""
+        plt.figure()
+        sns.pointplot(data=self.chains,
+                      x="step",
+                      y="vel", hue="chain_length", marker=".", linestyle="", native_scale=True, errorbar=None, 
+                      palette="bright")
+        plt.savefig(os.path.join(self.fig_folder, "velocityvsstep.png"))
+
+    def time_vs_step(self) -> None:
+        """Plot the time with the number of collision."""
+        plt.figure()
+        plt.plot(self.chains.step, self.chains.time, ".")
+        plt.savefig(os.path.join(self.fig_folder, "time_step.png"))
+
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
         if visualisation:
@@ -163,6 +177,8 @@ class PostProcessing:
                 self.visualisation()
             self.chain_length_distrib_evolution()
             self.mean_speed_evolution()
+        self.vel_vs_time()
+        self.time_vs_step()
         self.plot_vel()
         self.plot_min()
         self.plot_max()
@@ -194,4 +210,4 @@ if __name__=="""__main__""":
     DATA = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     DATA = DATA[DATA.chain_length <= 8]
     pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
-    pp.process(visualisation=True)
+    pp.process(visualisation=False)
