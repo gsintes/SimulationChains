@@ -85,6 +85,27 @@ class PostProcessing:
             plt.savefig(os.path.join(vis_folder, f"hist_vel_length_{l}.png"))
             plt.close()
 
+    def chain_length_distrib_evolution(self) -> None:
+        """"Plot the evolution of the chain length distribution."""
+        vis_folder = os.path.join(self.fig_folder,"Length_histograms")
+        try:
+            os.makedirs(vis_folder)
+        except FileExistsError:
+            shutil.rmtree(vis_folder)
+            os.makedirs(vis_folder)
+
+        for i in range(self.chains.step.max()):
+            sub_data = self.chains[self.chains.step==i]
+            plt.figure()
+            max_chain_length = self.chains.chain_length.max()
+            plt.xlim((0.9, max_chain_length + 1))
+            plt.ylim((0, 1))
+            sns.histplot(data=sub_data, x="chain_length", stat="density", discrete=True)
+            time = sub_data.time.unique()[0]
+            plt.title(f"Collision number : {i}, time: {time:.2f}s")
+            plt.savefig(os.path.join(vis_folder, f"{i}.png"))
+            plt.close()
+
     def visualisation(self) -> None:
         """Make a visualisation of the simulation."""
         vis_folder = os.path.join(self.fig_folder,"Visualisation")
@@ -96,7 +117,7 @@ class PostProcessing:
         self.chains["vis_pos"] = self.chains.position % self.width_vis_window
         y_min = self.chains.one.min() - 1
         y_max = self.chains.one.max() + 1
-        for i in range(self.simu.collisions_nb):
+        for i in range(self.chains.step.max()):
             plt.figure(figsize=(10, 8))
             plt.ylim((y_min, y_max))
             plt.xlim((-5, self.width_vis_window + 5))
@@ -108,7 +129,8 @@ class PostProcessing:
                 plt.plot(sub_sub.vis_pos, sub_sub.one, linestyle="", color="b", markersize=5 * length, marker=".", label=length)
 
             plt.legend(loc="center left", title="Chain length", bbox_to_anchor=(1.04, 0.5))
-            plt.title(f"Collision number : {i}, time: {sum(self.simu.time_collision[:i + 1]):.2f}s")
+            time = sub_data.time.unique()[0]
+            plt.title(f"Collision number : {i}, time: {time:.2f}s")
             plt.savefig(os.path.join(vis_folder, f"{i}.png"), bbox_inches="tight")
             plt.close()
 
@@ -120,29 +142,33 @@ class PostProcessing:
         except FileExistsError:
             shutil.rmtree(vis_folder)
             os.makedirs(vis_folder)
+        max_vel = self.chains.groupby(by=["step", "chain_length"]).vel.mean().max()
         min_vel = self.chains.vel.min()
-        max_vel = self.chains.vel.max()
         max_chain_length = self.chains.chain_length.max()
-        for i in range(self.simu.collisions_nb):
+        for i in range(self.chains.step.max()):
             sub_data = self.chains[self.chains.step==i]
             plt.figure()
             plt.ylim((min_vel - 1, max_vel + 1))
             plt.xlim((0.9, max_chain_length + 1))
             sns.pointplot(data=sub_data, x="chain_length", y="vel", linestyle="", native_scale=True, errorbar=None)
-            plt.title(f"Collision number : {i}, time: {sum(self.simu.time_collision[:i + 1]):.2f}s")
+            time = sub_data.time.unique()[0]
+            plt.title(f"Collision number : {i}, time: {time:.2f}s")
             plt.savefig(os.path.join(vis_folder, f"{i}.png"))
             plt.close()
         
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
+        if visualisation:
+            if len(self.chains.Simu_nb.unique())==1:
+                self.visualisation()
+            self.chain_length_distrib_evolution()
+            self.mean_speed_evolution()
         self.plot_vel()
         self.plot_min()
         self.plot_max()
         self.plot_histogram_chain_length()
         self.histogram_velocity()
-        if visualisation and len(self.chains.Simu_nb.unique())==1:
-            self.visualisation()
-            self.mean_speed_evolution()
+        
 
 
 if __name__=="""__main__""":
@@ -165,7 +191,7 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
     # pp.process(visualisation=True)
 
-    DATA = pd.read_csv("/Users/sintes/Desktop/chain_data.csv")
+    DATA = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
     DATA = DATA[DATA.chain_length <= 8]
-    pp = PostProcessing( "/Users/sintes/Desktop/FromDataRandomSpacing")
-    pp.process(visualisation=False)
+    pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
+    pp.process(visualisation=True)
