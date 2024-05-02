@@ -3,8 +3,25 @@ import os
 import shutil
 
 import pandas as pd
-
 import matplotlib.pyplot as plt
+
+import time
+
+def get_nb_rows_first_simu(file: str)-> int:
+    """Get the number of rows associated with the first simulation."""
+    count = 0
+    with open(file, "r") as f:
+        sim_nb = 1
+        for line in f:
+            try:
+                sim_nb = int(line.split(",")[-1])
+                if sim_nb == 1:
+                    break
+                count +=1
+            except ValueError:
+                pass
+    return count
+
 
 class Visualisation:
     """Visualisation of a simulation"""
@@ -12,7 +29,10 @@ class Visualisation:
     def __init__(self, folder: str) -> None:
         self.fig_folder = folder
         self.width_vis_window = 200
-        self.chains = pd.read_csv(os.path.join(self.fig_folder, "data.csv"))
+        csv_path = os.path.join(self.fig_folder, "data.csv")
+        line_nb = get_nb_rows_first_simu(csv_path)
+        self.chains = pd.read_csv(csv_path, nrows=line_nb)
+        self.chains["one"] = self.chains.position // self.width_vis_window
 
     def visualisation(self) -> None:
         """Make a visualisation of the simulation."""
@@ -41,3 +61,8 @@ class Visualisation:
             plt.title(f"Collision number : {i}, time: {time:.2f}s")
             plt.savefig(os.path.join(vis_folder, f"{i}.png"), bbox_inches="tight")
             plt.close()
+
+if __name__=="__main__":
+    folder = "/Volumes/Guillaume/SimulationChains/DragUpdate"
+    vis = Visualisation(folder)
+    vis.visualisation()

@@ -15,7 +15,7 @@ import numpy as np
 
 class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
-        self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
+        self.chains = dd.read_csv(os.path.join(fig_folder, "data.csv"))
         self.fig_folder = fig_folder
 
     def plot_vel(self) -> None:
@@ -144,8 +144,6 @@ class PostProcessing:
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
         if visualisation:
-            if len(self.chains.Simu_nb.unique())==1:
-                self.visualisation()
             self.chain_length_distrib_evolution()
             self.mean_speed_evolution()
         self.vel_vs_time()
