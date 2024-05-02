@@ -17,7 +17,6 @@ class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
         self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
         self.fig_folder = fig_folder
-        self.width_vis_window = 200
 
     def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
@@ -103,34 +102,6 @@ class PostProcessing:
             time = sub_data.time.unique()[0]
             plt.title(f"Collision number : {i}, time: {time:.2f}s")
             plt.savefig(os.path.join(vis_folder, f"{i}.png"))
-            plt.close()
-
-    def visualisation(self) -> None:
-        """Make a visualisation of the simulation."""
-        vis_folder = os.path.join(self.fig_folder,"Visualisation")
-        try:
-            os.makedirs(vis_folder)
-        except FileExistsError:
-            shutil.rmtree(vis_folder)
-            os.makedirs(vis_folder)
-        self.chains["vis_pos"] = self.chains.position % self.width_vis_window
-        y_min = self.chains.one.min() - 1
-        y_max = self.chains.one.max() + 1
-        for i in range(self.chains.step.max()):
-            plt.figure(figsize=(10, 8))
-            plt.ylim((y_min, y_max))
-            plt.xlim((-5, self.width_vis_window + 5))
-            sub_data = self.chains[self.chains.step == i]
-            lengthes = sub_data.chain_length.unique()
-            lengthes.sort()
-            for length in lengthes:
-                sub_sub = sub_data[sub_data.chain_length==length]
-                plt.plot(sub_sub.vis_pos, sub_sub.one, linestyle="", color="b", markersize=5 * length, marker=".", label=length)
-
-            plt.legend(loc="center left", title="Chain length", bbox_to_anchor=(1.04, 0.5))
-            time = sub_data.time.unique()[0]
-            plt.title(f"Collision number : {i}, time: {time:.2f}s")
-            plt.savefig(os.path.join(vis_folder, f"{i}.png"), bbox_inches="tight")
             plt.close()
 
     def mean_speed_evolution(self) -> None:
