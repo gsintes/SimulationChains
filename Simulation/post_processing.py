@@ -15,7 +15,7 @@ import numpy as np
 
 class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
-        self.chains = dd.read_csv(os.path.join(fig_folder, "data.csv"))
+        self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
         self.fig_folder = fig_folder
 
     def plot_vel(self) -> None:
