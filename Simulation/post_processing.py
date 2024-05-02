@@ -16,7 +16,17 @@ import numpy as np
 class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
         self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
+        self.lengths = self.chains.chain_length.unique()
         self.fig_folder = fig_folder
+
+    @staticmethod
+    def create_folders(folder) -> None:
+        """Create and empty folder for visualisation"""
+        try:
+            os.makedirs(folder)
+        except FileExistsError:
+            shutil.rmtree(folder)
+            os.makedirs(folder)
 
     def plot_vel(self) -> None:
         """Plot the velocity with chain length."""
@@ -32,29 +42,30 @@ class PostProcessing:
         plt.savefig(os.path.join(self.fig_folder, "vel_chainLengthScatter.png"))
         plt.close()
 
-    def plot_min(self) -> None:
-        """Plot the minimal velocity for each chain length"""
-        lengths = self.chains.chain_length.unique()
-        mins_vel = np.zeros(len(lengths))
-        for i, length in enumerate(lengths):
-            mins_vel[i] = self.chains[self.chains.chain_length==length].vel.min()
+    def plot_by_chain_length(self) -> None:
+        """Plot the extremal velocity and velocity histograms for each chain length"""
+        PostProcessing.create_folders(os.path.join(self.fig_folder,"Velocity_histograms"))   
+        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
+        mins_vel = np.zeros(len(self.lengths))
+        maxs_vel = np.zeros(len(self.lengths))
+
+        for i, length in enumerate(self.lengths):
+            sub_data = self.chains[self.chains.chain_length==length]
+            maxs_vel[i] = sub_data.vel.max()
+            mins_vel[i] = sub_data.vel.min()
+
+            self.histogram_velocity(sub_data, length)
+
         plt.figure()
         plt.xlabel("Chain length")
         plt.ylabel("Minimal velocity")
-        plt.plot(lengths, mins_vel, linestyle="", marker="o")
+        plt.plot(self.lengths, mins_vel, linestyle="", marker="o")
         plt.savefig(os.path.join(self.fig_folder, "min.png"))
-
-    def plot_max(self) -> None:
-        """Plot the minimal velocity for each chain length"""
-        lengths = self.chains.chain_length.unique()
-        maxs_vel = np.zeros(len(lengths))
-        for i, length in enumerate(lengths):
-            maxs_vel[i] = self.chains[self.chains.chain_length==length].vel.max()
-
+            
         plt.figure()
         plt.xlabel("Chain length")
         plt.ylabel("Maximal velocity")
-        plt.plot(lengths, maxs_vel, linestyle="", marker="o")
+        plt.plot(self.lengths, maxs_vel, linestyle="", marker="o")
         plt.savefig(os.path.join(self.fig_folder, "max.png"))
 
     def plot_histogram_chain_length(self) -> None:
@@ -65,37 +76,23 @@ class PostProcessing:
         plt.savefig(os.path.join(self.fig_folder, "length_hist.png"))
         plt.close()
 
-    def histogram_velocity(self) -> None:
-        """Make the histogram of velocity by chain length."""
+    def histogram_velocity(self, data: pd.DataFrame, n: int) -> None:
+        """Make the histogram of velocity."""
         vis_folder = os.path.join(self.fig_folder,"Velocity_histograms")
-        try:
-            os.makedirs(vis_folder)
-        except FileExistsError:
-            shutil.rmtree(vis_folder)
-            os.makedirs(vis_folder)
-
-        data = pp.chains.drop_duplicates(("Simu_nb", "id"))
-        lengthes = data.chain_length.unique()
-        for l in lengthes:
-            sub_data = data[data.chain_length==l]
-            plt.figure()
-            sns.histplot(data=sub_data, x="vel")
-            plt.savefig(os.path.join(vis_folder, f"hist_vel_length_{l}.png"))
-            plt.close()
+        plt.figure()
+        sns.histplot(data=data, x="vel")
+        plt.savefig(os.path.join(vis_folder, f"hist_vel_length_{n}.png"))
+        plt.close()
 
     def chain_length_distrib_evolution(self) -> None:
         """"Plot the evolution of the chain length distribution."""
         vis_folder = os.path.join(self.fig_folder,"Length_histograms")
-        try:
-            os.makedirs(vis_folder)
-        except FileExistsError:
-            shutil.rmtree(vis_folder)
-            os.makedirs(vis_folder)
+        PostProcessing.create_folders(vis_folder)
 
         for i in range(self.chains.step.max()):
             sub_data = self.chains[self.chains.step==i]
             plt.figure()
-            max_chain_length = self.chains.chain_length.max()
+            max_chain_length = self.lengths.max()
             plt.xlim((0.9, max_chain_length + 1))
             plt.ylim((0, 1))
             sns.histplot(data=sub_data, x="chain_length", stat="density", discrete=True)
@@ -107,14 +104,11 @@ class PostProcessing:
     def mean_speed_evolution(self) -> None:
         """Make a visualisation of speed evolution."""
         vis_folder = os.path.join(self.fig_folder,"Speed evolution")
-        try:
-            os.makedirs(vis_folder)
-        except FileExistsError:
-            shutil.rmtree(vis_folder)
-            os.makedirs(vis_folder)
+        PostProcessing.create_folders(vis_folder)
+
         max_vel = self.chains.groupby(by=["step", "chain_length"]).vel.mean().max()
         min_vel = self.chains.vel.min()
-        max_chain_length = self.chains.chain_length.max()
+        max_chain_length = self.lengths.max()
         for i in range(self.chains.step.max()):
             sub_data = self.chains[self.chains.step==i]
             plt.figure()
@@ -149,22 +143,22 @@ class PostProcessing:
         self.vel_vs_time()
         self.time_vs_step()
         self.plot_vel()
-        self.plot_min()
-        self.plot_max()
+        self.plot_by_chain_length()
         self.plot_histogram_chain_length()
-        self.histogram_velocity()
         
 
 
 if __name__=="""__main__""":
+
+    DATA = pd.read_csv("/Volumes/Guillaume/Chains/chain_data.csv")
+    DATA = DATA[DATA.chain_length <= 8]
     
     # simu_max = sim.SimulationMax()
     # pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
     # pp.process()
 
-    # simu_df = sim.SimuSampleDragForce()
-    # pp = PostProcessing(simu_df, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageDragForce")
-    # pp.process()
+    pp = PostProcessing("/Volumes/Guillaume/SimulationChains/AverageDragForce")
+    pp.process()
 
     # simu_v = sim.SimuSampleSpeed()
     # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
@@ -176,7 +170,6 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
     # pp.process(visualisation=True)
 
-    DATA = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    DATA = DATA[DATA.chain_length <= 8]
-    pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
-    pp.process(visualisation=False)
+    
+    # pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
+    # pp.process(visualisation=False)

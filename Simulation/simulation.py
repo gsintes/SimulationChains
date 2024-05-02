@@ -351,7 +351,7 @@ class SimuDragUptade(Simulation):
 
 
 if __name__ == "__main__":
-    data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
-    folder = "/Users/sintes/Desktop/NASGuillaume/SimulationChains/DragUpdate"
-    simu = SimuDragUptade(data=data, saving_folder=folder, nb_bacteria=1000, nb_collisions=800, position_random=False, nb_simu=50)
+    # data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    folder = "/Volumes/Guillaume/SimulationChains/AverageDragForce"
+    simu = SimuSampleDragForce(saving_folder=folder, nb_bacteria=1000, nb_collisions=500, position_random=False, nb_simu=1)
     simu.run_simu()
