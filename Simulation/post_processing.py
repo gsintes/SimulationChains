@@ -12,10 +12,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-
 class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
-        self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"))
+
+        self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"), usecols=["chain_length", "time", "step", "id", "Simu_nb", "vel", "step_appear"])
+
+        self.chains["chain_length"] = pd.to_numeric(self.chains["chain_length"], downcast="unsigned")
+        self.chains["step"] = pd.to_numeric(self.chains["step"], downcast="unsigned")
+        self.chains["id"] = pd.to_numeric(self.chains["id"], downcast="unsigned")
+        self.chains["Simu_nb"] = pd.to_numeric(self.chains["id"], downcast="unsigned")
+        self.chains["step_appear"] = pd.to_numeric(self.chains["step_appear"], downcast="unsigned")
+        self.chains["vel"] = pd.to_numeric(self.chains["vel"], downcast="float")
+
         self.lengths = self.chains.chain_length.unique()
         self.fig_folder = fig_folder
 
@@ -157,8 +165,8 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_max, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/Max")
     # pp.process()
 
-    pp = PostProcessing("/Volumes/Guillaume/SimulationChains/AverageDragForce")
-    pp.process()
+    # pp = PostProcessing("/Volumes/Guillaume/SimulationChains/AverageDragForce")
+    # pp.process()
 
     # simu_v = sim.SimuSampleSpeed()
     # pp = PostProcessing(simu_v, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/AverageSpeed")
@@ -170,6 +178,8 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
     # pp.process(visualisation=True)
 
+    pp = PostProcessing("/Volumes/Guillaume/SimulationChains/DragUpdate")
+    pp.process(True)
     
     # pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
     # pp.process(visualisation=False)

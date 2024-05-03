@@ -31,7 +31,7 @@ class Visualisation:
         self.width_vis_window = 200
         csv_path = os.path.join(self.fig_folder, "data.csv")
         line_nb = get_nb_rows_first_simu(csv_path)
-        self.chains = pd.read_csv(csv_path, nrows=line_nb)
+        self.chains = pd.read_csv(csv_path, nrows=line_nb, usecols=["chain_length", "step", "position"])
         self.chains["one"] = self.chains.position // self.width_vis_window
 
     def visualisation(self) -> None:
