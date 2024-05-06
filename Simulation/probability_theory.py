@@ -5,6 +5,8 @@
 
 D0 = 10
 
+from typing import Callable
+
 import numpy as np
 from scipy.stats import lognorm
 from scipy.integrate import quad
@@ -58,10 +60,16 @@ def distribution_time_encouter(t: float, v_c: float) -> float:
     """Calculate the distribution of the tine of encounter."""
     return derivative(lambda x: culmulative_time_encounter(x, v_c), t, dx=1)
 
+def esperance(distribution: Callable[[float], float], min_val: float=0, max_val: float = 100) -> float:
+    """Calculate the esperance of the distribution."""
+    return quad(lambda x: x * distribution(x), min_val, max_val)
+
 if __name__=="__main__":
-    t = np.linspace(0.1, 1000, 1000)
-    pdf = list(map(culmulative_time_encounter, t))
+    t = np.linspace(0., 20, 100)
+    pdf = list(map(infinity_encounter_probability, t))
     plt.figure()
     plt.plot(t, pdf)
+    plt.xlabel("$v_c$")
+    plt.ylabel("$p(T_e=+\\infty)$")
     plt.show(block=True)
-    print(pdf[-1] + infinity_encounter_probability(v_c=1))
+    # print(pdf[-1] + infinity_encounter_probability(v_c=1))
