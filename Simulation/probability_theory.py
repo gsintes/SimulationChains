@@ -64,11 +64,6 @@ class Probability_knowing_vc:
         """Calculate the distribution of the tine of encounter."""
         return derivative(lambda x: self.cumulative_time_encounter(x), t, dx=1)
     
-    @staticmethod
-    def esperance(distribution: Callable[[float], float], min_val: float=0, max_val: float = 100) -> float:
-        """Calculate the esperance of the distribution."""
-        return quad(lambda x: x * distribution(x), min_val, max_val)
-
 
 if __name__=="__main__":
     v_cs = [0.1, 1, 2, 10]
