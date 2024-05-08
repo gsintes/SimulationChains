@@ -16,13 +16,15 @@ class PostProcessing:
     def __init__(self, fig_folder: str) -> None:
 
         self.chains = pd.read_csv(os.path.join(fig_folder, "data.csv"), usecols=["chain_length", "time", "step", "id", "Simu_nb", "vel", "step_appear"])
-
+    
         self.chains["chain_length"] = pd.to_numeric(self.chains["chain_length"], downcast="unsigned")
         self.chains["step"] = pd.to_numeric(self.chains["step"], downcast="unsigned")
         self.chains["id"] = pd.to_numeric(self.chains["id"], downcast="unsigned")
         self.chains["Simu_nb"] = pd.to_numeric(self.chains["id"], downcast="unsigned")
         self.chains["step_appear"] = pd.to_numeric(self.chains["step_appear"], downcast="unsigned")
         self.chains["vel"] = pd.to_numeric(self.chains["vel"], downcast="float")
+       
+        self.chains = self.chains[self.chains["step"]<=500]
 
         self.lengths = self.chains.chain_length.unique()
         self.fig_folder = fig_folder
@@ -141,7 +143,15 @@ class PostProcessing:
         """Plot the time with the number of collision."""
         plt.figure()
         plt.plot(self.chains.step, self.chains.time, ".")
+        plt.xlabel("Number of collisions")
+        plt.ylabel("Time")
         plt.savefig(os.path.join(self.fig_folder, "time_step.png"))
+
+        # plt.figure()
+        # plt.plot(self.chains.step, self.chains.time.diff(), ".")
+        # plt.xlabel("Number of collisions")
+        # plt.ylabel("Time between encounter")
+        # plt.savefig(os.path.join(self.fig_folder, "time_encounter_step.png"))
 
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
@@ -178,8 +188,8 @@ if __name__=="""__main__""":
     # pp = PostProcessing(simu_d, "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataEvenSpacing")
     # pp.process(visualisation=True)
 
-    pp = PostProcessing("/Volumes/Guillaume/SimulationChains/DragUpdate")
-    pp.process(True)
+    # pp = PostProcessing("/Users/sintes/Desktop/NASGuillaume/SimulationChains/DragUpdate")
+    # pp.process(False)
     
-    # pp = PostProcessing( "/Users/sintes/Desktop/NASGuillaume/SimulationChains/FromDataRandomSpacing")
-    # pp.process(visualisation=False)
+    pp = PostProcessing( "/Volumes/Guillaume/SimulationChains/FromDataRandomSpacing")
+    pp.process(visualisation=False)
