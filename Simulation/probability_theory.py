@@ -5,14 +5,14 @@
 
 D0 = 10
 
-from typing import Callable, Iterable
+import os
+from typing import Callable, Iterable, Dict
 
 import numpy as np
 from scipy.stats import lognorm
 from scipy.integrate import quad
-from scipy.misc import derivative
 import matplotlib.pyplot as plt
-from matplotlib import cm
+import matplotlib as mp
 
 def distrib_norm_vel(v: float) -> float:
     """Give the probability density of the norm of v."""
@@ -63,34 +63,55 @@ class Probability_knowing_vc:
     
     def get_cdf_dict_time_encounter(self, values: Iterable[float]) -> None:
         """Make a dict with the cdf of the time encounter."""
-        cdf = {}
+        self.cdf: Dict[float, float] = {}
         for val in values:
-            cdf[val] = self.cumulative_time_encounter(val)
+            self.cdf[val] = self.cumulative_time_encounter(val)
 
     def distribution_time_encounter(self) -> float:
         """Calculate the distribution of the tine of encounter."""
-        return derivative(lambda x: self.cumulative_time_encounter(x), t, dx=0.1)
-    
+        values = list(self.cdf.keys())
+        values.sort()
+        self.pdf: Dict[float, float] = {}
+        for i, val in enumerate(values):
+            if i < len(values) - 1:
+                self.pdf[val] = (self.cdf[values[i + 1]] - self.cdf[val]) / (values[i + 1] - val)
+            if i == len(values) - 1:
+                self.pdf[val] = (self.cdf[val] - self.cdf[values[i - 1]]) / (val - values[i - 1])
+
+    def get_mode_time_encouter(self) -> float:
+        """Get the most probable time of encounter."""
+        return max(self.pdf, key=self.pdf.get)
 
 if __name__=="__main__":
-    v_cs = [0.1, 1, 3, 5]
-    t = np.linspace(0.1, 50, 100)
+    save_folder = "/Users/sintes/Library/CloudStorage/OneDrive-Personal/These/ProbabilityEncounter"
+    v_cs = [0.1, 0.5, 1, 3, 5]
+    t = np.linspace(0.1, 50, 1000)
     fig1 = plt.figure()
     ax1 = fig1.gca()
     fig2 = plt.figure()
     ax2 = fig2.gca()
-    cmap = cm.get_cmap("viridis", len(v_cs))
+    cmap = mp.colormaps['viridis']
+    modes = []
     for i, v_c in enumerate(v_cs):
         proba = Probability_knowing_vc(distrib_norm_vel, v_c)       
-        cdf = list(map(proba.cumulative_time_encounter, t))
-        # pdf = list(map(proba.distribution_time_encounter, t))
-        # pdf2 = list(map(lambda x: proba.distrib_vel_rel_knowingSc(x, -1), t))
+        proba.get_cdf_dict_time_encounter(t)
+        proba.distribution_time_encounter()
         
-        ax1.plot(t, cdf, "-", color=cmap[i], label=v_c)
-        # ax2.plot(t, pdf, "-", color=cmap[i], label=v_c)
+        ax1.plot(t, proba.cdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
+        ax2.plot(t, proba.pdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
+        modes.append(proba.get_mode_time_encouter())
 
-    # ax1.xlabel("$T_e=t$")
-    # plt.ylabel("$p(T_e<t)$")
-    # plt.legend(title="$v_c$")
+    ax1.set_xlabel("$T_e=t$")
+    ax1.set_ylabel("$p(T_e<t)$")
+    ax2.set_xlabel("$T_e=t$")
+    ax2.set_ylabel("$p(T_e=t)$")
+    fig1.savefig("")
+    ax1.legend(title="$v_c$")
+    ax2.legend(title="$v_c$")
+
+    plt.figure()
+    plt.plot(v_cs, modes, "ob")
+    plt.xlabel("V_c")
+    plt.ylabel("$mode(T_e)$")
     plt.show(block=True)
     
