@@ -38,7 +38,7 @@ class Probability_knowing_vc:
         if s_c == 1:
             return (distrib_norm_vel(v_hat + self.v_c) + distrib_norm_vel(-(v_hat + self.v_c))) / 2
         elif s_c == -1:
-            return (distrib_norm_vel(self.v_c - v_hat) + distrib_norm_vel(v_hat - self.v_c)) / 2
+            return self.distrib_vel_rel_knowingSc(-v_hat, 1)
         
     def distrib_vel_rel(self, v_hat: float) -> float:
         """Calculate the distribution of the relative velocity."""
@@ -86,32 +86,52 @@ if __name__=="__main__":
     save_folder = "/Users/sintes/Library/CloudStorage/OneDrive-Personal/These/ProbabilityEncounter"
     v_cs = [0.1, 0.5, 1, 3, 5]
     t = np.linspace(0.1, 50, 1000)
+    v_rel = np.linspace(-30, 30, 200)
     fig1 = plt.figure()
     ax1 = fig1.gca()
     fig2 = plt.figure()
     ax2 = fig2.gca()
+    fig3 = plt.figure()
+    ax3 = fig3.gca()
     cmap = mp.colormaps['viridis']
     modes = []
     for i, v_c in enumerate(v_cs):
         proba = Probability_knowing_vc(distrib_norm_vel, v_c)       
         proba.get_cdf_dict_time_encounter(t)
         proba.distribution_time_encounter()
+        proba_vel_rel = list(map(lambda x: proba.distrib_vel_rel_knowingSc(x, 1), v_rel))
         
         ax1.plot(t, proba.cdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
         ax2.plot(t, proba.pdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
+        if i % 2 ==0:
+            ax3.plot(v_rel, proba_vel_rel, "-", color=cmap(v_c / max(v_cs)), label=v_c)
         modes.append(proba.get_mode_time_encouter())
 
-    ax1.set_xlabel("$T_e=t$")
+    ax1.set_xlabel("$t$")
     ax1.set_ylabel("$p(T_e<t)$")
-    ax2.set_xlabel("$T_e=t$")
+
+    ax2.set_xlabel("$t$")
     ax2.set_ylabel("$p(T_e=t)$")
-    fig1.savefig("")
+    fig1.savefig(os.path.join(save_folder, "cumulTe.png"))
     ax1.legend(title="$v_c$")
     ax2.legend(title="$v_c$")
+    fig2.savefig(os.path.join(save_folder, "pdfTe.png"))
+
+    ax3.set_xlabel("$\hat{v}$")
+    ax3.set_ylabel("$p(\hat{V}=\hat{v}|S_c=1)$")
+    ax3.legend(title="$v_c$")
+    fig3.savefig(os.path.join(save_folder, "pdfVrel.png"))
 
     plt.figure()
     plt.plot(v_cs, modes, "ob")
     plt.xlabel("V_c")
     plt.ylabel("$mode(T_e)$")
-    plt.show(block=True)
+    plt.savefig(os.path.join(save_folder, "modeTe.png"))
     
+    
+    plt.figure()
+    pdf =list(map(distrib_norm_vel, t))
+    plt.plot(t, pdf)
+    plt.xlabel("$v$")
+    plt.ylabel("$p(V_{l,r}=v)$")
+    plt.savefig(os.path.join(save_folder, "pdfVlr.png"))
