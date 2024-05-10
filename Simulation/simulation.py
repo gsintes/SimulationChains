@@ -4,9 +4,13 @@ import os
 from typing import List
 from abc import ABC, abstractmethod
 from math import isclose
+import random
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm
 
 
 class Simulation(ABC):
@@ -183,6 +187,49 @@ class Simulation(ABC):
             "position": position
         })
         return chains_data
+    
+    def sample_bact(self) -> List[int]:
+        """Sample random bacteria for visualisation."""
+        initial_vel = np.abs(self.velocity[:, 0])
+        val = [0, 0.25, 0.5, 0.75, 1]
+        quantiles = list(map(lambda x: np.quantile(initial_vel, x), val))
+        ids = []
+        for i, q in enumerate(quantiles):
+            if i !=0:
+                temp_indexes = []
+                for j in range(self.bacteria_nb):
+                    if quantiles[i - 1] < initial_vel[j] <= q:
+                        temp_indexes.append(j)
+                ids += random.sample(temp_indexes, 1)
+        return ids
+
+    def visualisation_speed_evolution_bact(self) -> None:
+        """Visualize the evolution of a bacteria"""
+        ids = self.sample_bact()
+        vel_tot = np.abs(self.velocity[ids, :])
+        steps = list(range(self.collisions_nb + 1))
+        chain_length_tot = self.chains[:, :, ids].sum(axis=1)
+        fig, axs = plt.subplots(1, 1, sharex=True, sharey=True)
+        for id in ids:
+            vel = np.abs(self.velocity[id, :])
+            chain_length = self.chains[:, :, id].sum(axis=1)
+            points = np.array([steps, vel]).T.reshape(-1, 1, 2)
+            segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+            cmap = ListedColormap(plt.get_cmap("jet")([i / (chain_length_tot.max() + 1) for i in range(int(chain_length_tot.max()) + 1)]))
+            norm = BoundaryNorm([0.5 + i for i in range(int(chain_length_tot.max()) + 1)], cmap.N)
+            lc = LineCollection(segments, cmap=cmap, norm=norm)
+            lc.set_array(chain_length)
+            lc.set_linewidth(1)
+            line = axs.add_collection(lc)
+
+        fig.colorbar(line, ax=axs)
+        axs.set_xlim(0, self.collisions_nb + 1)
+        axs.set_ylim(vel_tot.min() - 1, vel_tot.max() + 1)
+        plt.ylabel("Velocity")
+        plt.xlabel("Number of collisions")        
+        plt.show(block=True)
+
 
 class SimulationMax(Simulation):
     """Simulation with an update of the velocity keeping the max."""
@@ -351,7 +398,8 @@ class SimuDragUptade(Simulation):
 
 
 if __name__ == "__main__":
-    # data = pd.read_csv("/Users/sintes/Desktop/NASGuillaume/Chains/chain_data.csv")
+    data = pd.read_csv("/Volumes/Guillaume//Chains/chain_data.csv")
     folder = "/Volumes/Guillaume/SimulationChains/AverageDragForce"
-    simu = SimuSampleDragForce(saving_folder=folder, nb_bacteria=1000, nb_collisions=500, position_random=False, nb_simu=1)
+    simu = SimuSampleData(data=data, saving_folder=folder, nb_bacteria=1000, nb_collisions=500, position_random=True, nb_simu=1)
     simu.run_simu()
+    simu.visualisation_speed_evolution_bact()

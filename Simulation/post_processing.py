@@ -147,11 +147,12 @@ class PostProcessing:
         plt.ylabel("Time")
         plt.savefig(os.path.join(self.fig_folder, "time_step.png"))
 
-        # plt.figure()
-        # plt.plot(self.chains.step, self.chains.time.diff(), ".")
-        # plt.xlabel("Number of collisions")
-        # plt.ylabel("Time between encounter")
-        # plt.savefig(os.path.join(self.fig_folder, "time_encounter_step.png"))
+        times = self.chains.groupby("step").time.mean()
+        plt.figure()
+        plt.plot(times.index, times.diff(), ".")
+        plt.xlabel("Number of collisions")
+        plt.ylabel("Time between encounter")
+        plt.savefig(os.path.join(self.fig_folder, "time_encounter_step.png"))
 
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
