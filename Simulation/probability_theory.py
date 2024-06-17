@@ -39,7 +39,7 @@ class Probability_knowing_vc:
             return (distrib_norm_vel(v_hat + self.v_c) + distrib_norm_vel(-(v_hat + self.v_c))) / 2
         elif s_c == -1:
             return self.distrib_vel_rel_knowingSc(-v_hat, 1)
-        
+
     def distrib_vel_rel(self, v_hat: float) -> float:
         """Calculate the distribution of the relative velocity."""
         return (self.distrib_vel_rel_knowingSc(v_hat, 1)  + self.distrib_vel_rel_knowingSc(v_hat, -1)) / 2
@@ -53,14 +53,14 @@ class Probability_knowing_vc:
         """Probability to have an encounter at infinity."""
         p_v_inf_v_c = self.cumulative_norm_vel(self.v_c)
         self.pinf = (1 - p_v_inf_v_c ** 2) / 4
-    
+
     def cumulative_time_encounter(self, t: float) -> float:
         """Calculate the culmulative distribution of the time of encounter."""
 
         bigger_than = ((self.proba_interval_vel_rel_knowingSc(-1000, D0 / t, 1)) * (self.proba_interval_vel_rel_knowingSc(- D0 / t, 1000, 1)) + 
                         self.proba_interval_vel_rel_knowingSc(-1000, D0 / t, -1) * self.proba_interval_vel_rel_knowingSc(- D0 / t, 1000, -1)) / 2 
         return  1 - bigger_than
-    
+
     def get_cdf_dict_time_encounter(self, values: Iterable[float]) -> None:
         """Make a dict with the cdf of the time encounter."""
         self.cdf: Dict[float, float] = {}
@@ -82,6 +82,8 @@ class Probability_knowing_vc:
         """Get the most probable time of encounter."""
         return max(self.pdf, key=self.pdf.get)
 
+
+
 if __name__=="__main__":
     save_folder = "/Users/sintes/Library/CloudStorage/OneDrive-Personal/These/ProbabilityEncounter"
     v_cs = [0.1, 0.5, 1, 3, 5]
@@ -96,11 +98,11 @@ if __name__=="__main__":
     cmap = mp.colormaps['viridis']
     modes = []
     for i, v_c in enumerate(v_cs):
-        proba = Probability_knowing_vc(distrib_norm_vel, v_c)       
+        proba = Probability_knowing_vc(distrib_norm_vel, v_c)
         proba.get_cdf_dict_time_encounter(t)
         proba.distribution_time_encounter()
         proba_vel_rel = list(map(lambda x: proba.distrib_vel_rel_knowingSc(x, 1), v_rel))
-        
+
         ax1.plot(t, proba.cdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
         ax2.plot(t, proba.pdf.values(), "-", color=cmap(v_c / max(v_cs)), label=v_c)
         if i % 2 ==0:
@@ -127,8 +129,7 @@ if __name__=="__main__":
     plt.xlabel("V_c")
     plt.ylabel("$mode(T_e)$")
     plt.savefig(os.path.join(save_folder, "modeTe.png"))
-    
-    
+
     plt.figure()
     pdf =list(map(distrib_norm_vel, t))
     plt.plot(t, pdf)

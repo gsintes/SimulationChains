@@ -53,7 +53,7 @@ class Simulation(ABC):
     def update_vel(self) -> None:
         """Update the velocities after collisions"""
         raise NotImplementedError
-    
+
     @abstractmethod
     def update_drag(self) -> None:
         """Update the drag after collisions"""
@@ -63,12 +63,12 @@ class Simulation(ABC):
     def sampler(self) -> None:
         """Sample the initial position, velocity, force and drag."""
         raise NotImplementedError
-    
+
     @abstractmethod
     def tumble(self) -> None:
         """Tumbling of the bacteria."""
         raise NotImplementedError
-    
+
     def update_force(self) -> None:
         """Update the force."""
         self.force[:, self.step] = self.velocity[:, self.step] / self.drag[:, self.step]
@@ -187,7 +187,7 @@ class Simulation(ABC):
             "position": position
         })
         return chains_data
-    
+
     def sample_bact(self) -> List[int]:
         """Sample random bacteria for visualisation."""
         initial_vel = np.abs(self.velocity[:, 0])
@@ -227,7 +227,7 @@ class Simulation(ABC):
         axs.set_xlim(0, self.collisions_nb + 1)
         axs.set_ylim(vel_tot.min() - 1, vel_tot.max() + 1)
         plt.ylabel("Velocity")
-        plt.xlabel("Number of collisions")        
+        plt.xlabel("Number of collisions")
         plt.show(block=True)
 
 
@@ -282,13 +282,13 @@ class SimuSampleSpeed(SimuNoDragUpdate):
         abs_vel = np.random.lognormal(size=self.bacteria_nb)
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
-        
+
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
         self.update_force()
 
 class SimuSampleData(SimuNoDragUpdate):
     """Not tumbling. No drag update. Sampling velocity from actual distribution."""
-    def __init__(self, 
+    def __init__(self,
                  saving_folder: str,
                  data: pd.DataFrame,
                  nb_bacteria: int=1000,
@@ -310,7 +310,7 @@ class SimuSampleData(SimuNoDragUpdate):
         p = x - i
         vel = (1 - p) * self.vel[i] + p * self.vel[i + 1]
         return vel
-    
+
     def sampler(self) -> None:
         data1 = self.data[self.data.chain_length==1]
         _vel = data1.velocity.dropna()
@@ -322,7 +322,7 @@ class SimuSampleData(SimuNoDragUpdate):
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
         self.drag[:, 0] = [10 for _ in range(self.bacteria_nb)]
-        self.update_force()        
+        self.update_force()
 
 
 class SimuSampleDragForce(SimuNoDragUpdate):
@@ -336,12 +336,12 @@ class SimuSampleDragForce(SimuNoDragUpdate):
         self.velocity[:, 0] = self.force[:, 0] / self.drag[:, 0]
 
 class SimuDragUptade(Simulation):
-    """Update the drag considering that there is only one flagella length in the chain."""    
-    
+    """Update the drag considering that there is only one flagella length in the chain."""
+
     drag_body = 13e-3
     drag_flagella = 9.1e-3
 
-    def __init__(self, 
+    def __init__(self,
                  saving_folder: str,
                  data: pd.DataFrame,
                  nb_bacteria: int=1000,
@@ -356,13 +356,9 @@ class SimuDragUptade(Simulation):
                         position_random=position_random,
                         initial_size=initial_size)
         self.data = data
-    
+
     def tumble(self) -> None:
         pass
-
-    @abstractmethod
-    def sampler(self) -> None:
-        raise NotImplementedError
 
     def update_drag(self) -> None:
         chain_length = self.chains[self.step, :, :].sum(axis=1)
@@ -382,7 +378,7 @@ class SimuDragUptade(Simulation):
         p = x - i
         vel = (1 - p) * self.vel[i] + p * self.vel[i + 1]
         return vel
-    
+
     def sampler(self) -> None:
         data1 = self.data[self.data.chain_length==1]
         _vel = data1.velocity.dropna()
@@ -394,12 +390,12 @@ class SimuDragUptade(Simulation):
         sign = np.random.choice([-1, 1], size=abs_vel.shape)
         self.velocity[:, 0] = sign * abs_vel
         self.drag[:, 0] = [SimuDragUptade.drag_body + SimuDragUptade.drag_flagella for _ in range(self.bacteria_nb)]
-        self.update_force()    
+        self.update_force()
 
 
 if __name__ == "__main__":
     data = pd.read_csv("/Volumes/Guillaume//Chains/chain_data.csv")
     folder = "/Users/sintes/Desktop/FromDataRandomSpacing"
-    simu = SimuSampleData(data=data, saving_folder=folder, nb_bacteria=1000, nb_collisions=500, position_random=True, nb_simu=2)
+    simu = SimuSampleData(data=data, saving_folder=folder, nb_bacteria=1000, nb_collisions=1000, position_random=True, nb_simu=2)
     simu.run_simu()
     # simu.visualisation_speed_evolution_bact()

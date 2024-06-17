@@ -23,7 +23,10 @@ class PostProcessing:
         self.chains["Simu_nb"] = pd.to_numeric(self.chains["id"], downcast="unsigned")
         self.chains["step_appear"] = pd.to_numeric(self.chains["step_appear"], downcast="unsigned")
         self.chains["vel"] = pd.to_numeric(self.chains["vel"], downcast="float")
+        self.chains["time"] = pd.to_numeric(self.chains["time"], downcast="float")
 
+        t0 = 10 / 6
+        self.chains["time_norm"] = self.chains["time"] / t0
         self.chains = self.chains[self.chains["step"]<=500]
 
         self.lengths = self.chains.chain_length.unique()
@@ -80,7 +83,7 @@ class PostProcessing:
 
     def count_chain_length(self) -> None:
         """Plot the proportion per chain length with time."""
-        data = self.chains.groupby(["step", "chain_length"]).count()
+        data = self.chains.groupby(["time_norm", "chain_length"]).count()
         data = data.reset_index()
         data = data.rename(columns={"id": "count"})
         data = data.pivot(index="step", columns="chain_length", values="count")
@@ -148,7 +151,7 @@ class PostProcessing:
         """Plot the velocity for the different length with time."""
         plt.figure()
         sns.pointplot(data=self.chains,
-                      x="step",
+                      x="time_norm",
                       y="vel", hue="chain_length", marker=".", linestyle="", native_scale=True, errorbar=None,
                       palette="bright")
         plt.savefig(os.path.join(self.fig_folder, "velocityvsstep.png"))
@@ -170,15 +173,15 @@ class PostProcessing:
 
     def process(self, visualisation: bool=False) -> None:
         """Run the post processing."""
-        # if visualisation:
-        #     self.chain_length_distrib_evolution()
-            # self.mean_speed_evolution()
+        if visualisation:
+            self.chain_length_distrib_evolution()
+            self.mean_speed_evolution()
         self.count_chain_length()
-        # self.vel_vs_time()
-        # self.time_vs_step()
-        # self.plot_vel()
-        # self.plot_by_chain_length()
-        # self.plot_histogram_chain_length()
+        self.vel_vs_time()
+        self.time_vs_step()
+        self.plot_vel()
+        self.plot_by_chain_length()
+        self.plot_histogram_chain_length()
 
 
 
@@ -205,5 +208,5 @@ if __name__=="""__main__""":
     # pp = PostProcessing("/Volumes/Guillaume/SimulationChains/DragUpdate")
     # pp.process(False)
 
-    pp = PostProcessing( "/home/guillaume/NAS/SimulationChains/FromDataRandomSpacing")
+    pp = PostProcessing("/home/guillaume/NAS/SimulationChains/FromDataRandomSpacing")
     pp.process(visualisation=False)
